@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency("activesupport", ">= 2.3.2")
   s.add_dependency("nokogiri", ["~> 1.4.0"])
-  s.add_dependency("curb", ["~> 0.7.0"])
+  s.add_dependency("typhoeus", ["~> 0.2.0"])
 
   s.add_development_dependency("rdiscount", "~> 1.6.5")
   s.add_development_dependency("rspec", ["~> 2.1.0"])

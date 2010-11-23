@@ -17,11 +17,11 @@ module Sucker #:nodoc:
     # The request URI
     attr_accessor :uri
 
-    def initialize(curl)
-      self.body = curl.body_str
-      self.code = curl.response_code
-      self.time = curl.total_time
-      self.uri  = curl.url
+    def initialize(response)
+      self.body = response.body
+      self.code = response.code
+      self.time = response.time
+      self.uri  = response.effective_url
     end
 
     # A shorthand that yields each match to a block

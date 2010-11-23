@@ -1,4 +1,4 @@
-require "curb"
+require "typhoeus"
 require "ostruct"
 require "uri"
 
@@ -85,23 +85,6 @@ module Sucker #:nodoc:
       @associate_tags = tokens
     end
 
-    def curl
-      warn "[DEPRECATION] `curl` is deprecated. Use `curl_opts` instead."
-      curl_opts
-    end
-
-    # Returns options for curl and yields them if given a block
-    #
-    #   worker = Sucker.new
-    #   worker.curl { |c| c.interface = "eth1" }
-    #
-    def curl_opts
-      @curl_opts ||= OpenStruct.new
-      yield @curl_opts if block_given?
-
-      @curl_opts.marshal_dump
-    end
-
     # Performs a request and returns a response
     #
     #   worker = Sucker.new
@@ -111,11 +94,8 @@ module Sucker #:nodoc:
       raise ArgumentError.new "Locale missing"         unless locale
       raise ArgumentError.new "AWS access key missing" unless key
 
-      curl = Curl::Easy.perform(uri.to_s) do |easy|
-        curl_opts.each { |k, v| easy.send("#{k}=", v) }
-      end
-
-      Response.new(curl)
+      response = Typhoeus::Request.get(uri.to_s)
+      Response.new(response)
     end
 
     # Performs a request for all locales, returns an array of responses, and yields
@@ -136,14 +116,16 @@ module Sucker #:nodoc:
         self.locale = locale
         uri.to_s
       end
+      
       responses = []
-
-      Curl::Multi.get(uris, curl_opts) do |curl|
-        response = Response.new(curl)
-        yield response if block_given?
-        responses << response
+      
+      uris.each do |uri|
+        request = Typhoeus::Request.new(uri)
+        request.on_complete { |response| responses << Response.new(response) }
+        hydra.queue(request)
       end
 
+      hydra.run
       responses
     end
 
@@ -193,6 +175,11 @@ module Sucker #:nodoc:
     end
 
     private
+    
+    # Typhoeus hydra
+    def hydra
+      @hydra = Typhoeus::Hydra.new
+    end
 
     # Timestamps parameters and concatenates them into a query string
     def build_query
