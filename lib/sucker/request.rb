@@ -178,7 +178,7 @@ module Sucker #:nodoc:
     
     # Typhoeus hydra
     def hydra
-      @hydra = Typhoeus::Hydra.new
+      @hydra ||= Typhoeus::Hydra.new
     end
 
     # Timestamps parameters and concatenates them into a query string
