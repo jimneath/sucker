@@ -173,6 +173,27 @@ module Sucker #:nodoc:
     def version=(version)
       self.parameters["Version"] = version
     end
+    
+    # This is due to laziness / hackiness
+    def search(query, indexes = [])
+      responses = []
+      
+      indexes.each do |index|
+        self.parameters.merge!({
+          "Operation" => "ItemSearch", 
+          "SearchIndex" => index, 
+          "Keywords" => query,
+          "ResponseGroup" => "Small,Images,SalesRank"
+        })
+
+        request = Typhoeus::Request.new(self.uri.to_s)
+        request.on_complete { |response| responses << Response.new(response) }
+        hydra.queue(request)
+      end  
+
+      hydra.run
+      responses
+    end
 
     private
     
